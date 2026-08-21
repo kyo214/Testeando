@@ -68,6 +68,10 @@ public class EnemyAISystem
                 enemy.MoveDirection =
                     Vector2.Zero;
 
+                enemy.UpdateAttack(
+                    delta,
+                    player);
+
                 continue;
             }
 
@@ -82,6 +86,7 @@ public class EnemyAISystem
             {
                 enemy.MoveDirection =
                     Vector2.Normalize(difference);
+
             }
             else
             {
