@@ -51,22 +51,28 @@ public class Enemy : CharacterEntity
             target,
             damage);
     }
-    public void UpdateAttack(
+    public DamageResult? UpdateAttack(
     float delta,
     CharacterEntity target)
     {
         if (AttackCooldownRemaining > 0)
         {
             AttackCooldownRemaining -= delta;
-            return;
+            return null;
         }
 
         if (!CanAttack)
-            return;
+            return null;
 
-        Attack(target);
+
+        DamageResult? result =
+            Attack(target);
+
 
         AttackCooldownRemaining =
             AttackCooldown;
+
+
+        return result;
     }
 }

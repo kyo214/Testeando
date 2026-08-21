@@ -30,7 +30,21 @@ public class Game
     public EnemySpawnSystem EnemySpawn { get; }
     public WaveSystem Wave { get; }
     public MapSystem Map { get; }
+    public IReadOnlyList<GameEvent> DebugEvents => LastEvents;
 
+    public int DebugPlayerWeapons =>
+    Player.Weapons.Count;
+
+    public int DebugWorldEntities =>
+        World.Entities.Count;
+
+    public bool DebugWorldHasPlayer =>
+        World.Entities.Any(e => e is Player);
+    public int DebugPlayerAttackCalls =>
+    Player.DebugAttackCalls;
+    public int DebugWeaponEvents =>
+    Weapons.DebugWeaponEvents;
+    public int DebugEventsAfterWeapons { get; private set; }
     public Game()
     {
         Player = new Player();
@@ -70,13 +84,25 @@ public class Game
     }
 
     public void Update(
-    float delta,
-    List<Vector2> spawnPositions)
+float delta,
+List<Vector2> spawnPositions)
     {
         if (!IsRunning)
             return;
 
-        // Spawn / Waves
+
+        // =========================
+        // CLEAR EVENTS FROM PREVIOUS FRAME
+        // =========================
+
+        LastEvents.Clear();
+
+
+
+        // =========================
+        // SPAWN / WAVES
+        // =========================
+
         Wave.Update(
             World,
             delta,
@@ -92,17 +118,32 @@ public class Game
         }
 
 
-        // Gameplay loop
-        EnemyAI.Update(
-            World,
-            Player,
-            delta);
 
+        // =========================
+        // AI
+        // =========================
+
+        LastEvents.AddRange(
+    EnemyAI.Update(
+        World,
+        Player,
+        delta));
+
+
+
+        // =========================
+        // MOVEMENT
+        // =========================
 
         Movement.Update(
             World,
             delta);
 
+
+
+        // =========================
+        // PLAYER WEAPONS
+        // =========================
 
         LastEvents.AddRange(
             Weapons.Update(
@@ -112,13 +153,20 @@ public class Game
                 delta));
 
 
+        DebugEventsAfterWeapons = LastEvents.Count;
+        // =========================
+        // ENEMY WEAPONS
+        // =========================
+
         foreach (var entity in World.Entities)
         {
             if (entity is not Enemy enemy)
                 continue;
 
+
             if (!enemy.Active || !enemy.IsAlive)
                 continue;
+
 
             LastEvents.AddRange(
                 Weapons.Update(
@@ -129,16 +177,42 @@ public class Game
         }
 
 
-        Projectiles.Update(
-            World,
-            delta);
 
+        // =========================
+        // COLLISION
+        // =========================
 
         LastEvents.AddRange(
             Collision.Update(
                 World,
                 Combat));
 
+
+
+        // =========================
+        // EXPERIENCE
+        // =========================
+
+        LastEvents.AddRange(
+            Experience.Process(
+                Player,
+                LastEvents));
+
+
+
+        // =========================
+        // LEVEL
+        // =========================
+
+        Level.Process(
+            Player,
+            LastEvents);
+
+
+
+        // =========================
+        // CLEANUP
+        // =========================
 
         Cleanup.Update(
             World);

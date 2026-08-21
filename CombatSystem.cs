@@ -6,12 +6,25 @@ namespace RogueTest.Core.Combat;
 public class CombatSystem
 {
     private readonly Random _random = new();
+    public int DebugAttackCalls { get; private set; }
 
+    public string DebugLastAttacker { get; private set; } = "";
+
+    public string DebugLastTarget { get; private set; } = "";
+    public string DebugLastSource { get; private set; } = "";
     public DamageResult Attack(
     CharacterEntity attacker,
     CharacterEntity target,
     DamageInfo damage)
     {
+        DebugLastSource = damage.Source;
+        DebugAttackCalls++;
+
+        DebugLastAttacker =
+            attacker.GetType().Name;
+
+        DebugLastTarget =
+            target.GetType().Name;
         if (!attacker.Active || !target.Active)
             return new DamageResult
             {
