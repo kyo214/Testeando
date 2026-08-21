@@ -69,21 +69,40 @@ public class Game
         IsRunning = false;
     }
 
-    public void Update(float delta)
+    public void Update(
+    float delta,
+    List<Vector2> spawnPositions)
     {
         if (!IsRunning)
             return;
 
-        LastEvents.Clear();
+        // Spawn / Waves
+        Wave.Update(
+            World,
+            delta,
+            spawnPositions);
 
+
+        if (Wave.IsWaveComplete)
+        {
+            Wave.TryStartNextWave(
+                World,
+                Map,
+                spawnPositions);
+        }
+
+
+        // Gameplay loop
         EnemyAI.Update(
             World,
             Player,
             delta);
 
+
         Movement.Update(
             World,
             delta);
+
 
         LastEvents.AddRange(
             Weapons.Update(
@@ -91,6 +110,7 @@ public class Game
                 World,
                 Combat,
                 delta));
+
 
         foreach (var entity in World.Entities)
         {
@@ -108,49 +128,19 @@ public class Game
                     delta));
         }
 
+
         Projectiles.Update(
             World,
             delta);
+
 
         LastEvents.AddRange(
             Collision.Update(
                 World,
                 Combat));
 
+
         Cleanup.Update(
             World);
-
-
-        // =========================
-        // EXPERIENCE
-        // =========================
-
-        LastEvents.AddRange(
-            Experience.Process(
-                Player,
-                LastEvents));
-        Level.Process(
-    Player,
-    LastEvents);
-    }
-    public void Update(
-     float delta,
-     List<System.Numerics.Vector2> spawnPositions)
-    {
-        if (Map.IsMapComplete)
-            return;
-
-        Wave.Update(
-            World,
-            delta,
-            spawnPositions);
-
-        if (Wave.IsWaveComplete)
-        {
-            Wave.TryStartNextWave(
-                World,
-                Map,
-                spawnPositions);
-        }
     }
 }
