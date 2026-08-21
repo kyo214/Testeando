@@ -7,6 +7,7 @@ using RogueTest.Core.Systems;
 using RogueTest.Core.Weapons;
 using System.Collections.Generic;
 using System.Linq;
+using static Godot.Animation;
 
 public partial class TestCore : Node
 {
@@ -23,19 +24,18 @@ public partial class TestCore : Node
 	private int _lastWaveIndex = -1;
 	private bool _damageTestDone = false;
 	private bool _mapCompletePrinted = false;
+	private EnemyAIState _lastState;
 	public override void _Ready()
 	{
 		GD.Print("==============================");
-		GD.Print(" ROGUETEST AI TEST");
+		GD.Print(" ROGUETEST WAVE AI TEST");
 		GD.Print("==============================");
 
+
 		_game = new Game();
+
 		_game.Start();
 
-
-		// =========================
-		// PLAYER
-		// =========================
 
 		_game.Player.Position =
 			new System.Numerics.Vector2(400, 400);
@@ -47,95 +47,144 @@ public partial class TestCore : Node
 
 
 		// =========================
-		// WEAPON
+		// SPAWN POSITIONS
 		// =========================
 
-		WeaponDefinition weaponDefinition =
-			new WeaponDefinition
-			{
-				Name = "Goblin Sword",
-				Damage = 5,
-				DamageType = DamageType.Physical,
-				AttackCooldown = 1,
-				AttackType = WeaponAttackType.Direct,
-				Range = 50,
-				TargetingMode = TargetingMode.Nearest
-			};
-
-
-		Weapon weapon =
-			new Weapon
-			{
-				Name = weaponDefinition.Name,
-				Damage = weaponDefinition.Damage,
-				DamageType = weaponDefinition.DamageType,
-				AttackCooldown = weaponDefinition.AttackCooldown,
-				AttackType = weaponDefinition.AttackType,
-				Range = weaponDefinition.Range,
-				TargetingMode = weaponDefinition.TargetingMode
-			};
+		_spawnPositions.Add(
+			new System.Numerics.Vector2(200, 200));
 
 
 
 		// =========================
-		// ENEMY
+		// WEAPON DEFINITION
 		// =========================
 
-		Enemy enemy =
-			new Enemy
+		WeaponDefinition goblinWeapon =
+				new WeaponDefinition
+				{
+					Name = "Goblin Claws",
+					Damage = 10,
+					DamageType = DamageType.Physical,
+					AttackCooldown = 1.0f
+				};
+
+
+
+		// =========================
+		// ENEMY DEFINITION
+		// =========================
+
+		EnemyDefinition goblin =
+			new EnemyDefinition
 			{
-				Name = "Goblin Test",
-				Combat = _game.Combat,
-				Weapon = weapon
+				Name = "Goblin Wave Test",
+
+				MaxHealth = 100,
+
+				MoveSpeed = 50,
+
+				Damage = 10,
+
+				DetectionRange = 300,
+
+				AttackRange = 50,
+
+				ExperienceReward = 10,
+
+				Weapon = goblinWeapon
 			};
 
 
-		enemy.Stats.MaxHealth = 100;
-		enemy.Stats.MoveSpeed = 50;
-		enemy.Stats.Damage = 10;
 
-		enemy.AttackRange = 50;
-		enemy.DetectionRange = 300;
+		// =========================
+		// WAVE DEFINITION
+		// =========================
 
-
-		enemy.Position =
-			new System.Numerics.Vector2(340, 400);
+		WaveDefinition wave =
+			new WaveDefinition();
 
 
-		_game.World.AddEntity(enemy);
+		wave.Enemies.Add(
+			new EnemySpawnDefinition
+			{
+				Enemy = goblin,
+				Count = 1,
+				SpawnInterval = 1
+			});
 
 
-		GD.Print(
-			$"Enemy Spawned: {enemy.Name}");
 
-		GD.Print(
-			$"Distance: {(_game.Player.Position - enemy.Position).Length()}");
+		// =========================
+		// MAP
+		// =========================
+
+		MapDefinition map =
+			new MapDefinition
+			{
+				Name = "Test Map"
+			};
 
 
-		GD.Print("==============================");
-		GD.Print(" STARTING AI LOOP");
-		GD.Print("==============================");
+		map.Waves.Add(wave);
+
+
+
+		_game.Map.StartMap(map);
+
+
+		GD.Print("Map Started");
+
+
+
+		// =========================
+		// START WAVE
+		// =========================
+
+		WaveDefinition? firstWave =
+			_game.Map.GetCurrentWave();
+
+
+		if (firstWave != null)
+		{
+			_game.Wave.StartWave(firstWave);
+
+			GD.Print("Wave Started");
+		}
+		else
+		{
+			GD.Print("No Wave Found");
+		}
 	}
+
 
 	public override void _Process(double delta)
 	{
 		_game.Update(
-			(float)delta);
+			(float)delta,
+			_spawnPositions);
 
 
-		if (_game.World.Entities.Count > 1)
+		if (Time.GetTicksMsec() % 500 < 20)
 		{
-			Enemy enemy =
-				(Enemy)_game.World.Entities[1];
+			GD.Print(
+				$"Entities: {_game.World.Entities.Count}");
 
 
-			if (Time.GetTicksMsec() % 500 < 20)
+			foreach (var entity in _game.World.Entities)
 			{
-				GD.Print(
-					$"Enemy Pos: {enemy.Position} | " +
-					$"Distance: {(_game.Player.Position - enemy.Position).Length()} | " +
-					$"State: {enemy.AIState} | " +
-					$"HP: {_game.Player.Stats.Health}");
+				if (entity is Enemy enemy)
+				{
+					GD.Print(
+						$"Enemy: {enemy.Name} | " +
+						$"Pos:{enemy.Position} | " +
+						$"State:{enemy.AIState} | " +
+						$"Distance:{(_game.Player.Position - enemy.Position).Length()} | " +
+						$"Player HP:{_game.Player.Stats.Health}");
+
+					GD.Print(
+						$"Weapon: {(enemy.Weapon != null ? enemy.Weapon.Name : "NULL")} | " +
+						$"Combat: {(enemy.Combat != null ? "OK" : "NULL")}");
+				}
 			}
 		}
 	}

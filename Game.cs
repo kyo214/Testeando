@@ -50,7 +50,7 @@ public class Game
         EnemySpawn = new EnemySpawnSystem();
 
         Wave = new WaveSystem(
-            EnemySpawn);
+            EnemySpawn, Combat);
         Map = new MapSystem();
 
 

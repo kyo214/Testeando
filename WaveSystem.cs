@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using RogueTest.Core.Combat;
 using RogueTest.Core.Entities;
 using RogueTest.Core.World;
 
@@ -7,14 +8,19 @@ namespace RogueTest.Core.Systems;
 public class WaveSystem
 {
     private readonly EnemySpawnSystem _enemySpawnSystem;
+    private readonly CombatSystem _combat;
+
     private readonly List<Enemy> _currentWaveEnemies = new();
+
     public IReadOnlyList<Enemy> CurrentWaveEnemies =>
-    _currentWaveEnemies;
+        _currentWaveEnemies;
+
 
     public bool IsWaveComplete =>
-    !_spawningWave &&
-    _currentWaveEnemies.Count > 0 &&
-    _currentWaveEnemies.All(enemy => !enemy.IsAlive);
+        !_spawningWave &&
+        _currentWaveEnemies.Count > 0 &&
+        _currentWaveEnemies.All(enemy => !enemy.IsAlive);
+
 
     private WaveDefinition? _currentWaveDefinition;
 
@@ -23,26 +29,38 @@ public class WaveSystem
     private float _spawnTimer;
 
     private bool _spawningWave;
+
     public bool IsSpawningWave =>
-    _spawningWave;
+        _spawningWave;
+
 
     public int NextEnemyIndex =>
         _nextEnemyIndex;
 
+
     public float SpawnTimer =>
         _spawnTimer;
+
+
     private int _currentSpawnDefinitionIndex;
 
     private int _currentSpawnCount;
+
+
     public int CurrentSpawnDefinitionIndex =>
-    _currentSpawnDefinitionIndex;
+        _currentSpawnDefinitionIndex;
+
 
     public int CurrentSpawnCount =>
         _currentSpawnCount;
+
     public WaveSystem(
-        EnemySpawnSystem enemySpawnSystem)
+        EnemySpawnSystem enemySpawnSystem,
+    CombatSystem combat)
     {
         _enemySpawnSystem = enemySpawnSystem;
+
+        _combat = combat;
     }
 
     public List<Enemy> SpawnWave(
@@ -56,6 +74,7 @@ public class WaveSystem
 
         int positionIndex = 0;
 
+
         foreach (EnemySpawnDefinition spawnDefinition
                  in definition.Enemies)
         {
@@ -66,14 +85,18 @@ public class WaveSystem
                 if (positions.Count == 0)
                     break;
 
+
                 Vector2 position =
                     positions[positionIndex % positions.Count];
+
 
                 Enemy enemy =
                     _enemySpawnSystem.Spawn(
                         world,
                         spawnDefinition.Enemy,
-                        position);
+                        position,
+                        _combat);
+
 
                 spawnedEnemies.Add(enemy);
 
@@ -82,6 +105,7 @@ public class WaveSystem
                 positionIndex++;
             }
         }
+
 
         return spawnedEnemies;
     }
@@ -182,7 +206,8 @@ public class WaveSystem
                 _enemySpawnSystem.Spawn(
                     world,
                     definition.Enemy,
-                    position);
+                    position,
+                    _combat);
 
             _currentWaveEnemies.Add(enemy);
 

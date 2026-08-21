@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using RogueTest.Core.Combat;
 using RogueTest.Core.Entities;
 using RogueTest.Core.Weapons;
 using RogueTest.Core.World;
@@ -10,10 +11,11 @@ public class EnemySpawnSystem
     public Enemy Spawn(
         GameWorld world,
         EnemyDefinition definition,
-        Vector2 position)
+        Vector2 position,
+        CombatSystem combat)
     {
         Enemy enemy = new Enemy();
-
+        enemy.Combat = combat;
         enemy.Name = definition.Name;
 
         enemy.Position = position;
