@@ -8,5 +8,9 @@ public abstract class CharacterEntity : Entity
     public CharacterStats Stats { get; } = new();
     public List<Weapon> Weapons { get; } = new();
     public bool IsAlive => Stats.IsAlive;
-
+    public void Revive()
+    {
+        Stats.RestoreFullHealth();
+        Active = true;
+    }
 }

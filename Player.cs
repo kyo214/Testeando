@@ -56,8 +56,26 @@ public class Player : CharacterEntity
         Stats.Heal(amount);
     }
 
+    //public void Revive()
+    //{
+    //    Active = true;
 
 
+    //    if (Combat != null)
+    //    {
+    //        Combat.DebugTag +=
+    //            $"BEFORE REVIVE HP={Stats.Health}/{Stats.MaxHealth}\n";
+    //    }
+
+
+    //    Stats.RestoreFullHealth();
+
+    //    if (Combat != null)
+    //    {
+    //        Combat.DebugTag +=
+    //            $"AFTER REVIVE HP={Stats.Health}/{Stats.MaxHealth}\n";
+    //    }
+    //}
 
 
     public List<GameEvent> Attack(Enemy target)

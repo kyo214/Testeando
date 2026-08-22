@@ -32,6 +32,10 @@ public class Game
     public MapSystem Map { get; }
     public IReadOnlyList<GameEvent> DebugEvents => LastEvents;
     public bool IsGameOver { get; private set; }
+    private string _lastGameStateDebug = "";
+    public string RestartDebug { get; private set; } = "";
+    public float RestartProtectionTimer { get; private set; }
+    public string RestartDebugTag = "";
     public int DebugPlayerWeapons =>
     Player.Weapons.Count;
 
@@ -45,6 +49,7 @@ public class Game
     public int DebugWeaponEvents =>
     Weapons.DebugWeaponEvents;
     public int DebugEventsAfterWeapons { get; private set; }
+    private const float RestartProtectionDuration = 2f;
     public Game()
     {
         Player = new Player();
@@ -87,26 +92,42 @@ public class Game
     float delta,
     List<Vector2> spawnPositions)
     {
+        if (RestartProtectionTimer > 0)
+        {
+            RestartProtectionTimer -= delta;
+        }
+
         if (!IsRunning)
         {
             return;
         }
 
+        if (RestartProtectionTimer > 0)
+        {
+            RestartProtectionTimer -= delta;
 
+            if (RestartProtectionTimer < 0)
+                RestartProtectionTimer = 0;
+        }
         // =========================
         // GAME OVER BLOCK
         // =========================
 
         if (IsGameOver)
         {
-            Combat.DebugTag = "";
+            string state =
+                $"GAME UPDATE BLOCKED\nSTATE Running={IsRunning} GameOver={IsGameOver}\n";
 
-            Combat.DebugTag +=
-                "========== GAME UPDATE BLOCKED ==========\n";
+
+            if (state != _lastGameStateDebug)
+            {
+                Combat.DebugTag += state;
+
+                _lastGameStateDebug = state;
+            }
 
             return;
         }
-
 
         Combat.DebugTag = "";
 
@@ -178,7 +199,8 @@ public class Game
             EnemyAI.Update(
                 World,
                 Player,
-                delta);
+                delta,
+                RestartProtectionTimer);
 
 
         Combat.DebugTag +=
@@ -286,25 +308,27 @@ public class Game
 
 
 
-            var enemyWeaponEvents =
-                Weapons.Update(
-                    enemy,
-                    World,
-                    Combat,
-                    delta);
+            if (RestartProtectionTimer <= 0)
+            {
+                var enemyWeaponEvents =
+                    Weapons.Update(
+                        enemy,
+                        World,
+                        Combat,
+                        delta);
+
+                LastEvents.AddRange(enemyWeaponEvents);
+                Combat.DebugTag +=
+               $"After Enemy Weapon LastEvents={LastEvents.Count}\n";
+            }
+            else
+            {
+                Combat.DebugTag +=
+                    $"ENEMY ATTACK BLOCKED Restart Protection\n";
+            }
 
 
-
-            Combat.DebugTag +=
-                $"AFTER Enemy Weapon Update Events={enemyWeaponEvents.Count}\n";
-
-
-            LastEvents.AddRange(
-                enemyWeaponEvents);
-
-
-            Combat.DebugTag +=
-                $"After Enemy Weapon LastEvents={LastEvents.Count}\n";
+           
         }
 
 
@@ -439,5 +463,37 @@ public class Game
 
         Combat.DebugTag +=
             "========== GAME UPDATE END ==========\n";
+    }
+    
+    public void Restart()
+    {
+        IsGameOver = false;
+        IsRunning = true;
+
+        RestartProtectionTimer = RestartProtectionDuration;
+
+        RestartDebugTag =
+            "========== RESTART ==========\n";
+
+        Player.Revive();
+
+        foreach (var weapon in Player.Weapons)
+        {
+            weapon.ResetCooldown();
+        }
+        RestartDebugTag +=
+            $"REVIVE HP={Player.Stats.Health}/{Player.Stats.MaxHealth}\n";
+
+        LastEvents.Clear();
+
+        World.Clear();
+
+        World.AddEntity(Player);
+
+        Wave.Reset();
+
+        Wave.StartWave(
+            Map.GetCurrentWave()
+        );
     }
 }

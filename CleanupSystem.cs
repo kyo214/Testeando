@@ -43,19 +43,19 @@ public class CleanupSystem
         foreach (var entity in world.Entities)
         {
             DebugInfo +=
-                $"CHECK Entity={entity.GetType().Name} " +
-                $"Active={entity.Active}\n";
+                $"CHECK Entity={entity.GetType().Name} Active={entity.Active}\n";
 
 
             if (!entity.Active)
             {
                 // =========================
-                // PLAYER DEATH
+                // KEEP PLAYER AFTER DEATH
                 // =========================
+
                 if (entity is Player)
                 {
                     DebugInfo +=
-                        "KEEP PLAYER DEAD - GAME OVER PENDING\n";
+                        "KEEP PLAYER - GAME OVER\n";
 
                     continue;
                 }

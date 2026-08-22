@@ -600,4 +600,28 @@ public class WaveSystem
 
         return false;
     }
+    public void Reset()
+    {
+        DebugInfo +=
+            "========== RESET WAVE ==========\n";
+
+
+        _currentWaveEnemies.Clear();
+
+        _currentWaveDefinition = null;
+
+        _nextEnemyIndex = 0;
+
+        _spawnTimer = 0;
+
+        _spawningWave = false;
+
+        _currentSpawnDefinitionIndex = 0;
+
+        _currentSpawnCount = 0;
+
+
+        DebugInfo +=
+            "Wave Reset Complete\n";
+    }
 }

@@ -9,9 +9,10 @@ namespace RogueTest.Core.Systems;
 public class EnemyAISystem
 {
     public List<GameEvent> Update(
-        GameWorld world,
-        Player player,
-        float delta)
+    GameWorld world,
+    Player player,
+    float delta,
+    float restartProtectionTimer)
     {
         List<GameEvent> events =
             new();
@@ -160,11 +161,23 @@ public class EnemyAISystem
                     "BEFORE Enemy.UpdateAttack\n";
 
 
+                // =========================
+                // RESTART PROTECTION
+                // =========================
+
+                if (restartProtectionTimer > 0)
+                {
+                    enemy.DebugInfo +=
+                        "ATTACK BLOCKED Restart Protection\n";
+
+                    continue;
+                }
+
+
                 DamageResult? result =
                     enemy.UpdateAttack(
                         delta,
                         player);
-
 
 
                 enemy.DebugInfo +=

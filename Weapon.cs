@@ -58,4 +58,8 @@ public class Weapon
         CooldownRemaining =
             AttackCooldown / attackSpeed;
     }
+    public void ResetCooldown()
+    {
+        CooldownRemaining = 0;
+    }
 }
