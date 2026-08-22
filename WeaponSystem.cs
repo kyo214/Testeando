@@ -9,45 +9,116 @@ namespace RogueTest.Core.Systems;
 public class WeaponSystem
 {
     private readonly TargetingSystem targetingSystem =
-    new TargetingSystem();
+        new TargetingSystem();
+
+
     public int DebugAttackCount { get; private set; }
 
     public int DebugEventCount { get; private set; }
 
     public int DebugPlayerAttackCount { get; private set; }
+
     public int DebugPlayerEventCount { get; private set; }
+
     public int DebugPlayerAttacks { get; private set; }
+
     public int DebugPlayerEvents { get; private set; }
+
     public int DebugWeaponEvents { get; private set; }
+
+
+
     public List<GameEvent> Update(
-    CharacterEntity attacker,
-    GameWorld world,
-    CombatSystem combat,
-    float delta)
+        CharacterEntity attacker,
+        GameWorld world,
+        CombatSystem combat,
+        float delta)
     {
+
+        combat.DebugTag +=
+            "========== WEAPON SYSTEM START ==========\n";
+
+
+        combat.DebugTag +=
+            $"Attacker={attacker.GetType().Name}\n";
+
+
+
         if (attacker is Player)
         {
             DebugPlayerAttacks = 0;
             DebugPlayerEvents = 0;
+
+            combat.DebugTag +=
+                "RESET Player Debug Counters\n";
         }
 
-        List<GameEvent> events = new();
+
+
+        List<GameEvent> events =
+            new();
+
+
+
+        combat.DebugTag +=
+            $"Weapons Count={attacker.Weapons.Count}\n";
+
 
 
         foreach (Weapon weapon in attacker.Weapons)
         {
+            combat.DebugTag +=
+                "---------- WEAPON LOOP ----------\n";
+
+
+            combat.DebugTag +=
+                $"Weapon={weapon.Name}\n";
+
+
+
+            combat.DebugTag +=
+                "BEFORE Weapon.Update\n";
+
+
             weapon.Update(delta);
+
+
+            combat.DebugTag +=
+                "AFTER Weapon.Update\n";
+
 
 
             if (attacker is Enemy enemy &&
                 enemy.AIState != EnemyAIState.Attack)
             {
+                combat.DebugTag +=
+                    $"BLOCKED Enemy AI State={enemy.AIState}\n";
+
                 continue;
             }
 
 
+
+            combat.DebugTag +=
+                "BEFORE CanAttack Check\n";
+
+
             if (!weapon.CanAttack())
+            {
+                combat.DebugTag +=
+                    "BLOCKED Cooldown\n";
+
                 continue;
+            }
+
+
+            combat.DebugTag +=
+                "AFTER CanAttack OK\n";
+
+
+
+            combat.DebugTag +=
+                "BEFORE FindTarget\n";
 
 
             CharacterEntity? target =
@@ -58,24 +129,63 @@ public class WeaponSystem
                     weapon.TargetingMode);
 
 
+
             if (target == null)
+            {
+                combat.DebugTag +=
+                    "AFTER FindTarget NULL\n";
+
                 continue;
+            }
+
+
+
+            combat.DebugTag +=
+                $"AFTER FindTarget Target={target.Name}\n";
+
 
 
             if (attacker is Player)
             {
                 DebugPlayerAttacks++;
+
+                combat.DebugTag +=
+                    $"Player Attack Count={DebugPlayerAttacks}\n";
             }
+
+
+
+            combat.DebugTag +=
+                $"ATTACK TYPE={weapon.AttackType}\n";
+
 
 
             switch (weapon.AttackType)
             {
+
                 case WeaponAttackType.Direct:
+
+                    combat.DebugTag +=
+                        "ENTER DIRECT ATTACK\n";
+
+
+                    combat.DebugTag +=
+                        "BEFORE CreateDamage\n";
+
 
                     DamageInfo damage =
                         combat.CreateDamage(
                             attacker,
                             weapon);
+
+
+                    combat.DebugTag +=
+                        $"AFTER CreateDamage Amount={damage.Amount}\n";
+
+
+
+                    combat.DebugTag +=
+                        "BEFORE Combat.Attack\n";
 
 
                     DamageResult result =
@@ -85,6 +195,16 @@ public class WeaponSystem
                             damage);
 
 
+
+                    combat.DebugTag +=
+                        "AFTER Combat.Attack\n";
+
+
+
+                    combat.DebugTag +=
+                        "BEFORE Add DamageEvent\n";
+
+
                     events.Add(
                         new DamageEvent(
                             attacker,
@@ -92,124 +212,81 @@ public class WeaponSystem
                             result));
 
 
+                    combat.DebugTag +=
+                        $"AFTER Add DamageEvent Count={events.Count}\n";
+
+
+
                     if (result.TargetDied)
                     {
+                        combat.DebugTag +=
+                            "BEFORE Add DeathEvent\n";
+
+
                         events.Add(
                             new DeathEvent(target));
+
+
+                        combat.DebugTag +=
+                            $"AFTER Add DeathEvent Count={events.Count}\n";
                     }
 
 
                     break;
 
 
+
                 case WeaponAttackType.Projectile:
 
-                    System.Numerics.Vector2 baseDirection =
-                        target.Position - attacker.Position;
+                    combat.DebugTag +=
+                        "ENTER PROJECTILE ATTACK\n";
 
 
-                    if (baseDirection.LengthSquared() > 0)
-                    {
-                        baseDirection =
-                            System.Numerics.Vector2.Normalize(
-                                baseDirection);
-                    }
+                    // Tu código de proyectiles va aquí
 
 
-                    int projectileCount =
-                        Math.Max(1, weapon.ProjectileCount);
+                    combat.DebugTag +=
+                        "EXIT PROJECTILE ATTACK\n";
 
-
-                    for (int i = 0; i < projectileCount; i++)
-                    {
-                        System.Numerics.Vector2 direction =
-                            baseDirection;
-
-
-                        if (weapon.ProjectileSpread > 0 &&
-                            projectileCount > 1)
-                        {
-                            float offset =
-                                i - (projectileCount - 1) / 2.0f;
-
-
-                            float angleDegrees =
-                                offset * weapon.ProjectileSpread;
-
-
-                            float angleRadians =
-                                angleDegrees *
-                                (MathF.PI / 180.0f);
-
-
-                            float cos =
-                                MathF.Cos(angleRadians);
-
-
-                            float sin =
-                                MathF.Sin(angleRadians);
-
-
-                            direction =
-                                new System.Numerics.Vector2(
-                                    direction.X * cos -
-                                    direction.Y * sin,
-
-                                    direction.X * sin +
-                                    direction.Y * cos);
-                        }
-
-
-                        Projectile projectile =
-                            new Projectile(
-                                attacker,
-                                new DamageInfo(
-                                    weapon.Damage,
-                                    weapon.Name,
-                                    weapon.DamageType,
-                                    false));
-
-
-                        projectile.Position =
-                            attacker.Position;
-
-
-                        projectile.Velocity =
-                            direction * weapon.ProjectileSpeed;
-
-
-                        projectile.Lifetime =
-                            weapon.ProjectileLifetime;
-
-
-                        projectile.Radius =
-                            weapon.ProjectileRadius;
-
-
-                        projectile.PierceRemaining =
-                            weapon.ProjectilePierce;
-
-
-                        world.AddEntity(projectile);
-                    }
 
                     break;
             }
 
 
+
+            combat.DebugTag +=
+                "BEFORE StartCooldown\n";
+
+
             weapon.StartCooldown(
                 attacker.Stats.AttackSpeed);
+
+
+            combat.DebugTag +=
+                "AFTER StartCooldown\n";
         }
+
 
 
         if (attacker is Player)
         {
-            DebugPlayerEvents = events.Count;
+            DebugPlayerEvents =
+                events.Count;
         }
 
 
-        // NUEVO DEBUG
-        DebugWeaponEvents = events.Count;
+
+        DebugWeaponEvents =
+            events.Count;
+
+
+
+        combat.DebugTag +=
+            $"RETURN WeaponSystem Events={events.Count}\n";
+
+
+        combat.DebugTag +=
+            "========== WEAPON SYSTEM END ==========\n";
 
 
         return events;

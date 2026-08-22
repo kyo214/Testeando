@@ -21,5 +21,73 @@ public class EnemyDefinition
     public float AttackRange { get; set; } = 50;
 
     public int ExperienceReward { get; set; } = 10;
+
     public WeaponDefinition? Weapon { get; set; }
+
+
+
+    public string DebugInfo()
+    {
+        string debug = "";
+
+        debug +=
+            "========== ENEMY DEFINITION ==========\n";
+
+
+        debug +=
+            $"Name={Name}\n";
+
+
+        debug +=
+            $"HP={MaxHealth}\n";
+
+
+        debug +=
+            $"MoveSpeed={MoveSpeed}\n";
+
+
+        debug +=
+            $"Damage={Damage}\n";
+
+
+        debug +=
+            $"Defense={Defense}\n";
+
+
+        debug +=
+            $"AttackSpeed={AttackSpeed}\n";
+
+
+        debug +=
+            $"DetectionRange={DetectionRange}\n";
+
+
+        debug +=
+            $"AttackRange={AttackRange}\n";
+
+
+        debug +=
+            $"XP Reward={ExperienceReward}\n";
+
+
+
+        if (Weapon != null)
+        {
+            debug +=
+                $"Weapon={Weapon.Name}\n";
+        }
+        else
+        {
+            debug +=
+                "Weapon=NULL\n";
+        }
+
+
+
+        debug +=
+            "========== END ENEMY DEFINITION ==========\n";
+
+
+        return debug;
+    }
 }

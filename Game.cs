@@ -31,7 +31,7 @@ public class Game
     public WaveSystem Wave { get; }
     public MapSystem Map { get; }
     public IReadOnlyList<GameEvent> DebugEvents => LastEvents;
-
+    public bool IsGameOver { get; private set; }
     public int DebugPlayerWeapons =>
     Player.Weapons.Count;
 
@@ -84,18 +84,46 @@ public class Game
     }
 
     public void Update(
-float delta,
-List<Vector2> spawnPositions)
+    float delta,
+    List<Vector2> spawnPositions)
     {
         if (!IsRunning)
+        {
             return;
+        }
 
 
         // =========================
-        // CLEAR EVENTS FROM PREVIOUS FRAME
+        // GAME OVER BLOCK
         // =========================
+
+        if (IsGameOver)
+        {
+            Combat.DebugTag = "";
+
+            Combat.DebugTag +=
+                "========== GAME UPDATE BLOCKED ==========\n";
+
+            return;
+        }
+
+
+        Combat.DebugTag = "";
+
+
+        Combat.DebugTag +=
+            "========== GAME UPDATE START ==========\n";
+
+
+        Combat.DebugTag +=
+            $"BEFORE CLEAR LastEvents={LastEvents.Count}\n";
+
 
         LastEvents.Clear();
+
+
+        Combat.DebugTag +=
+            $"AFTER CLEAR LastEvents={LastEvents.Count}\n";
 
 
 
@@ -103,18 +131,36 @@ List<Vector2> spawnPositions)
         // SPAWN / WAVES
         // =========================
 
+
+        Combat.DebugTag +=
+            "BEFORE Wave.Update\n";
+
+
         Wave.Update(
             World,
             delta,
             spawnPositions);
 
 
+        Combat.DebugTag +=
+            "AFTER Wave.Update\n";
+
+
+
         if (Wave.IsWaveComplete)
         {
+            Combat.DebugTag +=
+                "BEFORE Start Next Wave\n";
+
+
             Wave.TryStartNextWave(
                 World,
                 Map,
                 spawnPositions);
+
+
+            Combat.DebugTag +=
+                "AFTER Start Next Wave\n";
         }
 
 
@@ -123,11 +169,29 @@ List<Vector2> spawnPositions)
         // AI
         // =========================
 
-        LastEvents.AddRange(
-    EnemyAI.Update(
-        World,
-        Player,
-        delta));
+
+        Combat.DebugTag +=
+            "BEFORE EnemyAI.Update\n";
+
+
+        var aiEvents =
+            EnemyAI.Update(
+                World,
+                Player,
+                delta);
+
+
+        Combat.DebugTag +=
+            $"AFTER EnemyAI.Update Events={aiEvents.Count}\n";
+
+
+        LastEvents.AddRange(aiEvents);
+
+
+        Combat.DebugTag +=
+            $"After AI LastEvents={LastEvents.Count}\n";
+
+
 
 
 
@@ -135,9 +199,20 @@ List<Vector2> spawnPositions)
         // MOVEMENT
         // =========================
 
+
+        Combat.DebugTag +=
+            "BEFORE Movement.Update\n";
+
+
         Movement.Update(
             World,
             delta);
+
+
+        Combat.DebugTag +=
+            "AFTER Movement.Update\n";
+
+
 
 
 
@@ -145,36 +220,99 @@ List<Vector2> spawnPositions)
         // PLAYER WEAPONS
         // =========================
 
-        LastEvents.AddRange(
+
+        Combat.DebugTag +=
+            "BEFORE Player Weapons.Update\n";
+
+
+        var playerWeaponEvents =
             Weapons.Update(
                 Player,
                 World,
                 Combat,
-                delta));
+                delta);
 
 
-        DebugEventsAfterWeapons = LastEvents.Count;
+
+        Combat.DebugTag +=
+            $"AFTER Player Weapons Events={playerWeaponEvents.Count}\n";
+
+
+        LastEvents.AddRange(
+            playerWeaponEvents);
+
+
+
+        DebugEventsAfterWeapons =
+            LastEvents.Count;
+
+
+        Combat.DebugTag +=
+            $"After Player Weapons LastEvents={LastEvents.Count}\n";
+
+
+
+
+
         // =========================
         // ENEMY WEAPONS
         // =========================
 
+
+        Combat.DebugTag +=
+            "BEFORE Enemy Weapons Loop\n";
+
+
         foreach (var entity in World.Entities)
         {
             if (entity is not Enemy enemy)
+            {
                 continue;
+            }
 
 
             if (!enemy.Active || !enemy.IsAlive)
+            {
+                Combat.DebugTag +=
+                    $"SKIP Enemy {enemy.Name} inactive\n";
+
                 continue;
+            }
 
 
-            LastEvents.AddRange(
+
+            Combat.DebugTag +=
+                $"BEFORE Enemy Weapon Update {enemy.Name}\n";
+
+
+
+            var enemyWeaponEvents =
                 Weapons.Update(
                     enemy,
                     World,
                     Combat,
-                    delta));
+                    delta);
+
+
+
+            Combat.DebugTag +=
+                $"AFTER Enemy Weapon Update Events={enemyWeaponEvents.Count}\n";
+
+
+            LastEvents.AddRange(
+                enemyWeaponEvents);
+
+
+            Combat.DebugTag +=
+                $"After Enemy Weapon LastEvents={LastEvents.Count}\n";
         }
+
+
+
+        Combat.DebugTag +=
+            "AFTER Enemy Weapons Loop\n";
+
+
 
 
 
@@ -182,10 +320,30 @@ List<Vector2> spawnPositions)
         // COLLISION
         // =========================
 
-        LastEvents.AddRange(
+
+        Combat.DebugTag +=
+            "BEFORE Collision.Update\n";
+
+
+        var collisionEvents =
             Collision.Update(
                 World,
-                Combat));
+                Combat);
+
+
+
+        Combat.DebugTag +=
+            $"AFTER Collision Events={collisionEvents.Count}\n";
+
+
+        LastEvents.AddRange(
+            collisionEvents);
+
+
+        Combat.DebugTag +=
+            $"After Collision LastEvents={LastEvents.Count}\n";
+
+
 
 
 
@@ -193,10 +351,30 @@ List<Vector2> spawnPositions)
         // EXPERIENCE
         // =========================
 
-        LastEvents.AddRange(
+
+        Combat.DebugTag +=
+            "BEFORE Experience.Process\n";
+
+
+        var experienceEvents =
             Experience.Process(
                 Player,
-                LastEvents));
+                LastEvents);
+
+
+
+        Combat.DebugTag +=
+            $"AFTER Experience Events={experienceEvents.Count}\n";
+
+
+        LastEvents.AddRange(
+            experienceEvents);
+
+
+        Combat.DebugTag +=
+            $"After Experience LastEvents={LastEvents.Count}\n";
+
+
 
 
 
@@ -204,9 +382,40 @@ List<Vector2> spawnPositions)
         // LEVEL
         // =========================
 
+
+        Combat.DebugTag +=
+            "BEFORE Level.Process\n";
+
+
         Level.Process(
             Player,
             LastEvents);
+
+
+        Combat.DebugTag +=
+            "AFTER Level.Process\n";
+
+
+
+
+
+        // =========================
+        // GAME OVER CHECK
+        // =========================
+
+
+        if (!Player.IsAlive)
+        {
+            IsGameOver = true;
+
+            Player.Active = false;
+
+
+            Combat.DebugTag +=
+                "========== GAME OVER ==========\n";
+        }
+
+
 
 
 
@@ -214,7 +423,21 @@ List<Vector2> spawnPositions)
         // CLEANUP
         // =========================
 
+
+        Combat.DebugTag +=
+            "BEFORE Cleanup.Update\n";
+
+
         Cleanup.Update(
             World);
+
+
+        Combat.DebugTag +=
+            $"AFTER Cleanup Entities={World.Entities.Count}\n";
+
+
+
+        Combat.DebugTag +=
+            "========== GAME UPDATE END ==========\n";
     }
 }
